@@ -1569,10 +1569,13 @@ class Container(Layer):
         self._feed_input_shapes = []
         for i, layer in enumerate(self.input_layers):
             self.input_names.append(layer.name)
-            if layer.is_placeholder:
-                self._feed_input_names.append(layer.name)
-                self._feed_inputs.append(layer.input)
-                self._feed_input_shapes.append(self.inputs[i]._keras_shape)
+            try:
+                if layer.is_placeholder:
+                    self._feed_input_names.append(layer.name)
+                    self._feed_inputs.append(layer.input)
+                    self._feed_input_shapes.append(self.inputs[i]._keras_shape)
+            except:
+                pass
         for layer in self.output_layers:
             self.output_names.append(layer.name)
 
