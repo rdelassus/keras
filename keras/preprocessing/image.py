@@ -543,7 +543,7 @@ class ImageDataGenerator(object):
 
     def flow_from_directory(self, directory,
                             color_mode=None, target_size=None,
-                            image_reader='pil', reader_config=None, 'target_size':(256,256)},
+                            image_reader='pil', reader_config=None,
                             read_formats=None,
                             classes=None, class_mode='categorical',
                             batch_size=32, shuffle=True, seed=None,
