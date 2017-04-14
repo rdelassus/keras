@@ -196,7 +196,7 @@ def standardize(x,
                 samplewise_standardize_axis=None,
                 fitting=False,
                 verbose=0,
-                config={},
+                config=None,
                 **kwargs):
     '''
 
@@ -210,6 +210,8 @@ def standardize(x,
         zca_whitening: apply ZCA whitening.
 
     '''
+    if config is None:
+        config = {}
     if fitting:
         if config.has_key('_X'):
             # add data to _X array
@@ -541,12 +543,16 @@ class ImageDataGenerator(object):
 
     def flow_from_directory(self, directory,
                             color_mode=None, target_size=None,
-                            image_reader='pil', reader_config={'target_mode':'RGB', 'target_size':(256,256)},
-                            read_formats={'png','jpg','jpeg','bmp'},
+                            image_reader='pil', reader_config=None, 'target_size':(256,256)},
+                            read_formats=None,
                             classes=None, class_mode='categorical',
                             batch_size=32, shuffle=True, seed=None,
                             save_to_dir=None, save_prefix='',
                             save_mode=None, save_format='jpeg'):
+        if reader_config is None:
+            reader_config = {'target_mode':'RGB', 'target_size':(256,256)}
+        if read_formats is None:
+            read_formats = {'png','jpg','jpeg','bmp'}
         return DirectoryIterator(
             directory, self,
             color_mode=color_mode, target_size=target_size,
