@@ -726,13 +726,18 @@ class DirectoryIterator(Iterator):
 
     def __init__(self, directory, image_data_generator,
                  color_mode=None, target_size=None,
-                 image_reader="pil", read_formats={'png','jpg','jpeg','bmp'},
-                 reader_config={'target_mode': 'RGB', 'target_size':None},
+                 image_reader="pil", read_formats=None,
+                 reader_config=None,
                  dim_ordering=K.image_dim_ordering,
                  classes=None, class_mode='categorical',
                  batch_size=32, shuffle=True, seed=None,
                  save_to_dir=None, save_prefix='',
                  save_mode=None, save_format='jpeg'):
+
+        if read_formats is None:
+            self.read_formats = {'png','jpg','jpeg','bmp'}
+        if reader_config is None:
+            self.reader_config = {'target_mode': 'RGB', 'target_size':None}
         self.directory = directory
         self.image_data_generator = image_data_generator
         self.image_reader = image_reader
