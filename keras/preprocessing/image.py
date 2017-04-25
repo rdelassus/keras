@@ -16,10 +16,10 @@ import threading
 import copy
 import inspect
 import types
-from tifffile import imread
 
 from .. import backend as K
 from ..utils.generic_utils import Progbar
+
 
 def random_rotation(x, rg, row_index=1, col_index=2, channel_index=0,
                     fill_mode='nearest', cval=0.):
@@ -92,7 +92,7 @@ def random_channel_shift(x, intensity, channel_index=0):
     channel_images = [np.clip(x_channel + np.random.uniform(-intensity, intensity), min_x, max_x)
                       for x_channel in x]
     x = np.stack(channel_images, axis=0)
-    x = np.rollaxis(x, 0, channel_index+1)
+    x = np.rollaxis(x, 0, channel_index + 1)
     return x
 
 
@@ -112,7 +112,7 @@ def apply_transform(x, transform_matrix, channel_index=0, fill_mode='nearest', c
     channel_images = [ndi.interpolation.affine_transform(x_channel, final_affine_matrix,
                       final_offset, order=0, mode=fill_mode, cval=cval) for x_channel in x]
     x = np.stack(channel_images, axis=0)
-    x = np.rollaxis(x, 0, channel_index+1)
+    x = np.rollaxis(x, 0, channel_index + 1)
     return x
 
 
@@ -169,19 +169,16 @@ def load_img(path, target_mode=None, target_size=None):
         img = img.resize((target_size[1], target_size[0]))
     return img
 
+
 def list_pictures(directory, ext='jpg|jpeg|bmp|png'):
     return [os.path.join(directory, f) for f in os.listdir(directory)
             if os.path.isfile(os.path.join(directory, f)) and re.match('([\w]+\.(?:' + ext + '))', f)]
+
 
 def pil_image_reader(filepath, target_mode=None, target_size=None, dim_ordering=K.image_dim_ordering(), **kwargs):
     img = load_img(filepath, target_mode=target_mode, target_size=target_size)
     return img_to_array(img, dim_ordering=dim_ordering)
 
-def tiff_image_reader(filepath, target_mode=None, target_size=None, dim_ordering=K.image_dim_ordering(), **kwargs):
-    img = imread(filepath)
-    if target_size:
-        img.resize(target_size)
-    return img_to_array(img, dim_ordering=dim_ordering)
 
 def standardize(x,
                 dim_ordering='th',
@@ -216,9 +213,10 @@ def standardize(x,
         if config.has_key('_X'):
             # add data to _X array
             config['_X'][config['_iX']] = x
-            config['_iX'] +=1
+            config['_iX'] += 1
             if verbose and config.has_key('_fit_progressbar'):
-                config['_fit_progressbar'].update(config['_iX'], force=(config['_iX']==fitting))
+                config['_fit_progressbar'].update(
+                    config['_iX'], force=(config['_iX'] == fitting))
 
             # the array (_X) is ready to fit
             if config['_iX'] >= fitting:
@@ -228,34 +226,40 @@ def standardize(x,
                 if featurewise_center or featurewise_std_normalization:
                     featurewise_standardize_axis = featurewise_standardize_axis or 0
                     if type(featurewise_standardize_axis) is int:
-                        featurewise_standardize_axis = (featurewise_standardize_axis, )
+                        featurewise_standardize_axis = (
+                            featurewise_standardize_axis, )
                     assert 0 in featurewise_standardize_axis, 'feature-wise standardize axis should include 0'
 
                 if featurewise_center:
-                    mean = np.mean(X, axis=featurewise_standardize_axis, keepdims=True)
+                    mean = np.mean(
+                        X, axis=featurewise_standardize_axis, keepdims=True)
                     config['mean'] = np.squeeze(mean, axis=0)
                     X -= mean
 
                 if featurewise_std_normalization:
-                    std = np.std(X, axis=featurewise_standardize_axis, keepdims=True)
+                    std = np.std(
+                        X, axis=featurewise_standardize_axis, keepdims=True)
                     config['std'] = np.squeeze(std, axis=0)
                     X /= (std + 1e-7)
 
                 if zca_whitening:
-                    flatX = np.reshape(X, (X.shape[0], X.shape[1] * X.shape[2] * X.shape[3]))
+                    flatX = np.reshape(
+                        X, (X.shape[0], X.shape[1] * X.shape[2] * X.shape[3]))
                     sigma = np.dot(flatX.T, flatX) / flatX.shape[1]
                     U, S, V = linalg.svd(sigma)
-                    config['principal_components'] = np.dot(np.dot(U, np.diag(1. / np.sqrt(S + 10e-7))), U.T)
+                    config['principal_components'] = np.dot(
+                        np.dot(U, np.diag(1. / np.sqrt(S + 10e-7))), U.T)
                 if verbose:
                     del config['_fit_progressbar']
         else:
             # start a new fitting, fitting = total sample number
-            config['_X'] = np.zeros((fitting,)+x.shape)
+            config['_X'] = np.zeros((fitting,) + x.shape)
             config['_iX'] = 0
             config['_X'][config['_iX']] = x
-            config['_iX'] +=1
+            config['_iX'] += 1
             if verbose:
-                config['_fit_progressbar'] = Progbar(target=fitting, verbose=verbose)
+                config['_fit_progressbar'] = Progbar(
+                    target=fitting, verbose=verbose)
         return x
 
     if rescale:
@@ -294,10 +298,12 @@ def standardize(x,
             x = np.reshape(whitex, (x.shape[0], x.shape[1], x.shape[2]))
     return x
 
+
 def center_crop(x, center_crop_size, **kwargs):
-    centerw, centerh = x.shape[1]//2, x.shape[2]//2
-    halfw, halfh = center_crop_size[0]//2, center_crop_size[1]//2
-    return x[:, centerw-halfw:centerw+halfw,centerh-halfh:centerh+halfh]
+    centerw, centerh = x.shape[1] // 2, x.shape[2] // 2
+    halfw, halfh = center_crop_size[0] // 2, center_crop_size[1] // 2
+    return x[:, centerw - halfw:centerw + halfw, centerh - halfh:centerh + halfh]
+
 
 def random_crop(x, random_crop_size, sync_seed=None, **kwargs):
     np.random.seed(sync_seed)
@@ -306,7 +312,8 @@ def random_crop(x, random_crop_size, sync_seed=None, **kwargs):
     rangeh = (h - random_crop_size[1]) // 2
     offsetw = 0 if rangew == 0 else np.random.randint(rangew)
     offseth = 0 if rangeh == 0 else np.random.randint(rangeh)
-    return x[:, offsetw:offsetw+random_crop_size[0], offseth:offseth+random_crop_size[1]]
+    return x[:, offsetw:offsetw + random_crop_size[0], offseth:offseth + random_crop_size[1]]
+
 
 def random_transform(x,
                      dim_ordering='th',
@@ -357,7 +364,8 @@ def random_transform(x,
         img_channel_index = 2
         img_row_index = 0
         img_col_index = 1
-    # use composition of homographies to generate final transform that needs to be applied
+    # use composition of homographies to generate final transform that needs
+    # to be applied
     if rotation_range:
         theta = np.pi / 180 * np.random.uniform(-rotation_range, rotation_range)
     else:
@@ -366,12 +374,14 @@ def random_transform(x,
                                 [np.sin(theta), np.cos(theta), 0],
                                 [0, 0, 1]])
     if height_shift_range:
-        tx = np.random.uniform(-height_shift_range, height_shift_range) * x.shape[img_row_index]
+        tx = np.random.uniform(-height_shift_range,
+                               height_shift_range) * x.shape[img_row_index]
     else:
         tx = 0
 
     if width_shift_range:
-        ty = np.random.uniform(-width_shift_range, width_shift_range) * x.shape[img_col_index]
+        ty = np.random.uniform(-width_shift_range,
+                               width_shift_range) * x.shape[img_col_index]
     else:
         ty = 0
 
@@ -403,7 +413,8 @@ def random_transform(x,
                             [0, zy, 0],
                             [0, 0, 1]])
 
-    transform_matrix = np.dot(np.dot(np.dot(rotation_matrix, translation_matrix), shear_matrix), zoom_matrix)
+    transform_matrix = np.dot(
+        np.dot(np.dot(rotation_matrix, translation_matrix), shear_matrix), zoom_matrix)
 
     h, w = x.shape[img_row_index], x.shape[img_col_index]
     transform_matrix = transform_matrix_offset_center(transform_matrix, h, w)
@@ -425,6 +436,7 @@ def random_transform(x,
 
     np.random.seed()
     return x
+
 
 class ImageDataGenerator(object):
     '''Generate minibatches with
@@ -464,6 +476,7 @@ class ImageDataGenerator(object):
         seed: random seed for reproducible pipeline processing. If not None, it will also be used by `flow` or
             `flow_from_directory` to generate the shuffle index in case of no seed is set.
     '''
+
     def __init__(self,
                  featurewise_center=False,
                  samplewise_center=False,
@@ -498,7 +511,8 @@ class ImageDataGenerator(object):
                             'column) or "th" (channel before row and column). '
                             'Received arg: ', dim_ordering)
 
-        self.__sync_seed = self.config['seed'] or np.random.randint(0, 4294967295)
+        self.__sync_seed = self.config[
+            'seed'] or np.random.randint(0, 4294967295)
 
         self.default_pipeline = []
         self.default_pipeline.append(random_transform)
@@ -550,9 +564,9 @@ class ImageDataGenerator(object):
                             save_to_dir=None, save_prefix='',
                             save_mode=None, save_format='jpeg'):
         if reader_config is None:
-            reader_config = {'target_mode':'RGB', 'target_size':(256,256)}
+            reader_config = {'target_mode': 'RGB', 'target_size': None}
         if read_formats is None:
-            read_formats = {'png','jpg','jpeg','bmp'}
+            read_formats = {'png', 'jpg', 'jpeg', 'bmp'}
         return DirectoryIterator(
             directory, self,
             color_mode=color_mode, target_size=target_size,
@@ -583,7 +597,7 @@ class ImageDataGenerator(object):
         '''
         with self.fit_lock:
             try:
-                self.__fitting = nb_iter*generator.batch_size
+                self.__fitting = nb_iter * generator.batch_size
                 for i in xrange(nb_iter):
                     next(generator)
             finally:
@@ -599,12 +613,13 @@ class ImageDataGenerator(object):
         X = np.copy(X)
         with self.fit_lock:
             try:
-                self.__fitting = rounds*X.shape[0]
+                self.__fitting = rounds * X.shape[0]
                 for r in xrange(rounds):
                     for i in xrange(X.shape[0]):
                         self.process(X[i])
             finally:
                 self.__fitting = False
+
 
 class Iterator(object):
 
@@ -651,8 +666,10 @@ class Iterator(object):
         assert self.shuffle == it.shuffle
         seed = self.seed or np.random.randint(0, 4294967295)
         it.total_batches_seen = self.total_batches_seen
-        self.index_generator = self._flow_index(self.N, self.batch_size, self.shuffle, seed)
-        it.index_generator = it._flow_index(it.N, it.batch_size, it.shuffle, seed)
+        self.index_generator = self._flow_index(
+            self.N, self.batch_size, self.shuffle, seed)
+        it.index_generator = it._flow_index(
+            it.N, it.batch_size, it.shuffle, seed)
         if (sys.version_info > (3, 0)):
             iter_zip = zip
         else:
@@ -689,7 +706,8 @@ class NumpyArrayIterator(Iterator):
         self.save_mode = save_mode
         self.save_format = save_format
         seed = seed or image_data_generator.config['seed']
-        super(NumpyArrayIterator, self).__init__(X.shape[0], batch_size, shuffle, seed)
+        super(NumpyArrayIterator, self).__init__(
+            X.shape[0], batch_size, shuffle, seed)
 
     def __add__(self, it):
         if isinstance(it, NumpyArrayIterator):
@@ -705,8 +723,10 @@ class NumpyArrayIterator(Iterator):
         # the indexing of each batch
         # see http://anandology.com/blog/using-iterators-and-generators/
         with self.lock:
-            index_array, current_index, current_batch_size = next(self.index_generator)
-        # The transformation of images is not under thread lock so it can be done in parallel
+            index_array, current_index, current_batch_size = next(
+                self.index_generator)
+        # The transformation of images is not under thread lock so it can be
+        # done in parallel
         batch_x = None
         for i, j in enumerate(index_array):
             x = self.X[j]
@@ -716,10 +736,12 @@ class NumpyArrayIterator(Iterator):
             batch_x[i] = x
         if self.save_to_dir:
             for i in range(current_batch_size):
-                img = array_to_img(batch_x[i], self.dim_ordering, mode=self.save_mode, scale=True)
+                img = array_to_img(
+                    batch_x[i], self.dim_ordering, mode=self.save_mode, scale=True)
                 fname = '{prefix}_{index}_{hash}.{format}'.format(prefix=self.save_prefix,
                                                                   index=current_index + i,
-                                                                  hash=np.random.randint(1e4),
+                                                                  hash=np.random.randint(
+                                                                      1e4),
                                                                   format=self.save_format)
                 img.save(os.path.join(self.save_to_dir, fname))
         if self.y is None:
@@ -741,9 +763,9 @@ class DirectoryIterator(Iterator):
                  save_mode=None, save_format='jpeg'):
 
         if read_formats is None:
-            self.read_formats = {'png','jpg','jpeg','bmp'}
+            self.read_formats = {'png', 'jpg', 'jpeg', 'bmp'}
         if reader_config is None:
-            self.reader_config = {'target_mode': 'RGB', 'target_size':None}
+            self.reader_config = {'target_mode': 'RGB', 'target_size': None}
         self.directory = directory
         self.image_data_generator = image_data_generator
         self.image_reader = image_reader
@@ -797,7 +819,8 @@ class DirectoryIterator(Iterator):
                         break
                 if is_valid:
                     self.nb_sample += 1
-        print('Found %d images belonging to %d classes.' % (self.nb_sample, self.nb_class))
+        print('Found %d images belonging to %d classes.' %
+              (self.nb_sample, self.nb_class))
 
         # second, build an index of the images in the different class subfolders
         self.filenames = []
@@ -816,7 +839,8 @@ class DirectoryIterator(Iterator):
                     self.filenames.append(os.path.join(subdir, fname))
                     i += 1
 
-        assert len(self.filenames)>0, 'No valid file is found in the target directory.'
+        assert len(
+            self.filenames) > 0, 'No valid file is found in the target directory.'
         self.reader_config['class_mode'] = self.class_mode
         self.reader_config['classes'] = self.classes
         self.reader_config['filenames'] = self.filenames
@@ -824,12 +848,14 @@ class DirectoryIterator(Iterator):
         self.reader_config['nb_sample'] = self.nb_sample
         self.reader_config['seed'] = seed
         self.reader_config['sync_seed'] = self.image_data_generator.sync_seed
-        super(DirectoryIterator, self).__init__(self.nb_sample, batch_size, shuffle, seed)
+        super(DirectoryIterator, self).__init__(
+            self.nb_sample, batch_size, shuffle, seed)
         if inspect.isgeneratorfunction(self.image_reader):
             self._reader_generator_mode = True
             self._reader_generator = []
             # set index batch_size to 1
-            self.index_generator = self._flow_index(self.N, 1 , self.shuffle, seed)
+            self.index_generator = self._flow_index(
+                self.N, 1, self.shuffle, seed)
         else:
             self._reader_generator_mode = False
 
@@ -853,17 +879,18 @@ class DirectoryIterator(Iterator):
             sampleCount = 0
             batch_x = None
             _new_generator_flag = False
-            while sampleCount<self.batch_size:
+            while sampleCount < self.batch_size:
                 for x in self._reader_generator:
                     _new_generator_flag = False
                     if x.ndim == 2:
                         x = np.expand_dims(x, axis=0)
                     x = self.image_data_generator.process(x)
-                    self.reader_config['sync_seed'] = self.image_data_generator.sync_seed
+                    self.reader_config[
+                        'sync_seed'] = self.image_data_generator.sync_seed
                     if sampleCount == 0:
                         batch_x = np.zeros((self.batch_size,) + x.shape)
                     batch_x[sampleCount] = x
-                    sampleCount +=1
+                    sampleCount += 1
                     if sampleCount >= self.batch_size:
                         break
                 if sampleCount >= self.batch_size or _new_generator_flag:
@@ -871,18 +898,22 @@ class DirectoryIterator(Iterator):
                 with self.lock:
                     index_array, _, _ = next(self.index_generator)
                 fname = self.filenames[index_array[0]]
-                self._reader_generator = self.image_reader(os.path.join(self.directory, fname), **self.reader_config)
+                self._reader_generator = self.image_reader(
+                    os.path.join(self.directory, fname), **self.reader_config)
                 assert isinstance(self._reader_generator, types.GeneratorType)
                 _new_generator_flag = True
         else:
             with self.lock:
-                index_array, current_index, current_batch_size = next(self.index_generator)
-            # The transformation of images is not under thread lock so it can be done in parallel
+                index_array, current_index, current_batch_size = next(
+                    self.index_generator)
+            # The transformation of images is not under thread lock so it can be
+            # done in parallel
             batch_x = None
             # build batch of image data
             for i, j in enumerate(index_array):
                 fname = self.filenames[j]
-                x = self.image_reader(os.path.join(self.directory, fname), **self.reader_config)
+                x = self.image_reader(os.path.join(
+                    self.directory, fname), **self.reader_config)
                 if x.ndim == 2:
                     x = np.expand_dims(x, axis=0)
                 x = self.image_data_generator.process(x)
@@ -892,10 +923,12 @@ class DirectoryIterator(Iterator):
         # optionally save augmented images to disk for debugging purposes
         if self.save_to_dir:
             for i in range(current_batch_size):
-                img = array_to_img(batch_x[i], self.dim_ordering, mode=self.save_mode, scale=True)
+                img = array_to_img(
+                    batch_x[i], self.dim_ordering, mode=self.save_mode, scale=True)
                 fname = '{prefix}_{index}_{hash}.{format}'.format(prefix=self.save_prefix,
                                                                   index=current_index + i,
-                                                                  hash=np.random.randint(1e4),
+                                                                  hash=np.random.randint(
+                                                                      1e4),
                                                                   format=self.save_format)
                 img.save(os.path.join(self.save_to_dir, fname))
         # build batch of labels
