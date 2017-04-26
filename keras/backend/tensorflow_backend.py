@@ -626,6 +626,18 @@ def ones_like(x, dtype=None, name=None):
     return tf.ones_like(x, dtype=dtype, name=name)
 
 
+def identity(x):
+    """Returns a tensor with the same content as the input tensor.
+
+    # Arguments
+        x: The input tensor.
+
+    # Returns
+        A tensor of the same shape, type and content.
+    """
+    return tf.identity(x)
+
+
 def random_uniform_variable(shape, low, high, dtype=None,
                             name=None, seed=None):
     """Instantiates a variable with values drawn from a uniform distribution.
@@ -1290,6 +1302,28 @@ def log(x):
         A tensor.
     """
     return tf.log(x)
+
+
+def logsumexp(x, axis=None, keepdims=False):
+    """Computes log(sum(exp(elements across dimensions of a tensor))).
+
+    This function is more numerically stable than log(sum(exp(x))).
+    It avoids overflows caused by taking the exp of large inputs and
+    underflows caused by taking the log of small inputs.
+
+    # Arguments
+        x: A tensor or variable.
+        axis: An integer, the axis to reduce over.
+        keepdims: A boolean, whether to keep the dimensions or not.
+            If `keepdims` is `False`, the rank of the tensor is reduced
+            by 1. If `keepdims` is `True`, the reduced dimension is
+            retained with length 1.
+
+    # Returns
+        The reduced tensor.
+    """
+    axis = _normalize_axis(axis, ndim(x))
+    return tf.reduce_logsumexp(x, reduction_indices=axis, keep_dims=keepdims)
 
 
 def round(x):

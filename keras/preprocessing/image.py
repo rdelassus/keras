@@ -1,7 +1,7 @@
-'''Fairly basic set of tools for real-time data augmentation on image data.
+"""Fairly basic set of tools for real-time data augmentation on image data.
 Can easily be extended to include new transformations,
-new process methods, etc...
-'''
+new preprocessing methods, etc...
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 
@@ -13,6 +13,7 @@ from six.moves import range
 import os
 import sys
 import threading
+import warnings
 import copy
 import inspect
 import types
@@ -20,6 +21,10 @@ import types
 from .. import backend as K
 from ..utils.generic_utils import Progbar
 
+try:
+    from PIL import Image as pil_image
+except ImportError:
+    pil_image = None
 
 def random_rotation(x, rg, row_index=1, col_index=2, channel_index=0,
                     fill_mode='nearest', cval=0.):

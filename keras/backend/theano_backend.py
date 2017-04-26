@@ -1,6 +1,7 @@
 from collections import defaultdict
 from contextlib import contextmanager
 import theano
+from theano import ifelse
 from theano import tensor as T
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 from theano.tensor.signal import pool
@@ -258,6 +259,18 @@ def zeros_like(x, dtype=None, name=None):
     return T.zeros_like(x, dtype=dtype)
 
 
+def identity(x):
+    """Returns a tensor with the same content as the input tensor.
+
+    # Arguments
+        x: The input tensor.
+
+    # Returns
+        A tensor of the same shape, type and content.
+    """
+    return x.copy()
+
+
 def random_uniform_variable(shape, low, high, dtype=None, name=None):
     return variable(np.random.uniform(low=low, high=high, size=shape),
                     dtype=dtype, name=name)
@@ -513,6 +526,29 @@ def exp(x):
 
 def log(x):
     return T.log(x)
+
+
+def logsumexp(x, axis=None, keepdims=False):
+    """Computes log(sum(exp(elements across dimensions of a tensor))).
+
+    This function is more numerically stable than log(sum(exp(x))).
+    It avoids overflows caused by taking the exp of large inputs and
+    underflows caused by taking the log of small inputs.
+
+    # Arguments
+        x: A tensor or variable.
+        axis: An integer, the axis to reduce over.
+        keepdims: A boolean, whether to keep the dimensions or not.
+            If `keepdims` is `False`, the rank of the tensor is reduced
+            by 1. If `keepdims` is `True`, the reduced dimension is
+            retained with length 1.
+
+    # Returns
+        The reduced tensor.
+    """
+    # Theano has a built-in optimization for logsumexp (see https://github.com/Theano/Theano/pull/4736)
+    # so we can just write the expression directly:
+    return T.log(T.sum(T.exp(x), axis=axis, keepdims=keepdims))
 
 
 def round(x):
@@ -1898,10 +1934,14 @@ def pool2d(x, pool_size, strides=(1, 1), padding='valid',
                                 pad=pad,
                                 mode='max')
     elif pool_mode == 'avg':
+        if padding == 'same':
+            th_avg_pool_mode = 'average_inc_pad'
+        elif padding == 'valid':
+            th_avg_pool_mode = 'average_exc_pad'
         pool_out = pool.pool_2d(x, ws=pool_size, stride=strides,
                                 ignore_border=True,
                                 pad=pad,
-                                mode='average_exc_pad')
+                                mode=th_avg_pool_mode)
     else:
         raise ValueError('Invalid pooling mode:', pool_mode)
     if padding == 'same':
