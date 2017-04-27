@@ -896,6 +896,8 @@ class DirectoryIterator(Iterator):
         self.image_data_generator = image_data_generator
         if target_size is not None:
             self.target_size = tuple(target_size)
+        else:
+            self.target_size = None
         if color_mode not in {'rgb', 'grayscale'}:
             raise ValueError('Invalid color mode:', color_mode,
                              '; expected "rgb" or "grayscale".')
