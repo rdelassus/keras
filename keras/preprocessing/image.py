@@ -723,7 +723,7 @@ class Iterator(object):
         self.reset()
         while 1:
             if seed is not None:
-                np.random.seed(seed + self.total_batches_seen)
+                np.random.seed(seed)
             if self.batch_index == 0:
                 index_array = np.arange(n)
                 if shuffle:
