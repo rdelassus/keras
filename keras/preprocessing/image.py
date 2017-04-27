@@ -966,6 +966,7 @@ class DirectoryIterator(Iterator):
                         absolute_path = os.path.join(root, fname)
                         self.filenames.append(
                             os.path.relpath(absolute_path, directory))
+                        self.filenames.sort()
         super(DirectoryIterator, self).__init__(
             self.samples, batch_size, shuffle, seed)
 
