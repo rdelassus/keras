@@ -468,7 +468,8 @@ class ImageDataGenerator(object):
                             save_prefix='',
                             save_format='jpeg',
                             follow_links=False,
-                            image_reader=pil_image_reader):
+                            image_reader=pil_image_reader,
+                            read_formats=None):
         return DirectoryIterator(
             directory, self,
             target_size=target_size, color_mode=color_mode,
@@ -479,7 +480,8 @@ class ImageDataGenerator(object):
             save_prefix=save_prefix,
             save_format=save_format,
             follow_links=follow_links,
-            image_reader=image_reader)
+            image_reader=image_reader,
+            read_formats=read_formats)
 
     def standardize(self, x):
         """Apply the normalization configuration to a batch of inputs.
@@ -886,7 +888,8 @@ class DirectoryIterator(Iterator):
                  batch_size=32, shuffle=True, seed=None,
                  data_format=None,
                  save_to_dir=None, save_prefix='', save_format='jpeg',
-                 follow_links=False, image_reader=pil_image_reader):
+                 follow_links=False, image_reader=pil_image_reader,
+                 read_formats=None):
         if data_format is None:
             data_format = K.image_data_format()
         self.directory = directory
@@ -917,8 +920,10 @@ class DirectoryIterator(Iterator):
         self.save_prefix = save_prefix
         self.save_format = save_format
 
-        white_list_formats = {'png', 'jpg', 'jpeg', 'bmp'}
-
+        if read_formats is None:
+            self.read_formats = {'png', 'jpg', 'jpeg', 'bmp'}
+        else:
+            self.read_formats = read_formats
         # first, count the number of samples and classes
         self.samples = 0
 
@@ -939,7 +944,7 @@ class DirectoryIterator(Iterator):
             for root, _, files in _recursive_list(subpath):
                 for fname in files:
                     is_valid = False
-                    for extension in white_list_formats:
+                    for extension in self.read_formats:
                         if fname.lower().endswith('.' + extension):
                             is_valid = True
                             break
@@ -957,7 +962,7 @@ class DirectoryIterator(Iterator):
             for root, _, files in _recursive_list(subpath):
                 for fname in files:
                     is_valid = False
-                    for extension in white_list_formats:
+                    for extension in self.read_formats:
                         if fname.lower().endswith('.' + extension):
                             is_valid = True
                             break
