@@ -883,7 +883,7 @@ class DirectoryIterator(Iterator):
     """
 
     def __init__(self, directory, image_data_generator,
-                 target_size=(256, 256), color_mode='rgb',
+                 target_size=None, color_mode='rgb',
                  classes=None, class_mode='categorical',
                  batch_size=32, shuffle=True, seed=None,
                  data_format=None,
@@ -894,22 +894,13 @@ class DirectoryIterator(Iterator):
             data_format = K.image_data_format()
         self.directory = directory
         self.image_data_generator = image_data_generator
-        self.target_size = tuple(target_size)
+        if target_size is not None:
+            self.target_size = tuple(target_size)
         if color_mode not in {'rgb', 'grayscale'}:
             raise ValueError('Invalid color mode:', color_mode,
                              '; expected "rgb" or "grayscale".')
         self.color_mode = color_mode
         self.data_format = data_format
-        if self.color_mode == 'rgb':
-            if self.data_format == 'channels_last':
-                self.image_shape = self.target_size + (3,)
-            else:
-                self.image_shape = (3,) + self.target_size
-        else:
-            if self.data_format == 'channels_last':
-                self.image_shape = self.target_size + (1,)
-            else:
-                self.image_shape = (1,) + self.target_size
         self.classes = classes
         if class_mode not in {'categorical', 'binary', 'sparse', None}:
             raise ValueError('Invalid class_mode:', class_mode,
@@ -987,8 +978,7 @@ class DirectoryIterator(Iterator):
                 self.index_generator)
         # The transformation of images is not under thread lock
         # so it can be done in parallel
-        batch_x = np.zeros((current_batch_size,) +
-                           self.image_shape, dtype=K.floatx())
+        batch_x = [0] * current_batch_size
         grayscale = self.color_mode == 'grayscale'
         # build batch of image data
         for i, j in enumerate(index_array):
@@ -1001,6 +991,7 @@ class DirectoryIterator(Iterator):
             x = self.image_data_generator.random_transform(x)
             x = self.image_data_generator.standardize(x)
             batch_x[i] = x
+        batch_x = np.array(batch_x, dtype=K.floatx())
         # optionally save augmented images to disk for debugging purposes
         if self.save_to_dir:
             for i in range(current_batch_size):
